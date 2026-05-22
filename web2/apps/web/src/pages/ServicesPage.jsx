@@ -1,5 +1,5 @@
+import { Navigate } from 'react-router-dom';
 
-import React from 'react';
-import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { Home, Building2, Wre
+export default function ServicesPage() {
+  return <Navigate to="/how-it-works" replace />;
+}
