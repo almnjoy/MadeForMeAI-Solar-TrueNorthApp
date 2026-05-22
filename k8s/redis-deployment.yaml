@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truenorth-redis
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-redis
+    project: truenorth-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truenorth-redis
+  template:
+    metadata:
+      labels:
+        app: truenorth-redis
+        project: truenorth-demo
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          command: ["redis-server", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: truenorth-redis
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-redis
+    project: truenorth-demo
+spec:
+  selector:
+    app: truenorth-redis
+  ports:
+    - port: 6379
+      targetPort: 6379

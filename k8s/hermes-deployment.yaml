@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truenorth-hermes
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-hermes
+    project: truenorth-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truenorth-hermes
+  template:
+    metadata:
+      labels:
+        app: truenorth-hermes
+        project: truenorth-demo
+    spec:
+      containers:
+        - name: hermes
+          image: ghcr.io/almnjoy/hermes:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: HERMES_OPENROUTER_KEY
+            - name: BOT_TOKEN_DOC
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: HERMES_BOT_TOKEN_DOC
+            - name: BOT_TOKEN_SUPPORT
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: HERMES_BOT_TOKEN_SUPPORT
+            - name: BOT_TOKEN_SALES
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: HERMES_BOT_TOKEN_SALES
+            - name: BOT_TOKEN_LEAD
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: HERMES_BOT_TOKEN_LEAD
+            - name: BOT_TOKEN_CONTROLLER
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: HERMES_BOT_TOKEN_CONTROLLER
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: truenorth-hermes
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-hermes
+    project: truenorth-demo
+spec:
+  selector:
+    app: truenorth-hermes
+  ports:
+    - port: 8080
+      targetPort: 8080

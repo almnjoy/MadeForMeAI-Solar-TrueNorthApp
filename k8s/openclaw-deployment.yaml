@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truenorth-openclaw
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-openclaw
+    project: truenorth-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truenorth-openclaw
+  template:
+    metadata:
+      labels:
+        app: truenorth-openclaw
+        project: truenorth-demo
+    spec:
+      containers:
+        - name: openclaw
+          image: ghcr.io/openclaw/openclaw:2026.5.6
+          ports:
+            - containerPort: 18789
+          env:
+            - name: OPENCLAW_GATEWAY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: OPENCLAW_GATEWAY_TOKEN
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: OPENCLAW_OPENROUTER_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 18789
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: truenorth-openclaw
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-openclaw
+    project: truenorth-demo
+spec:
+  selector:
+    app: truenorth-openclaw
+  ports:
+    - port: 18789
+      targetPort: 18789
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: truenorth-openclaw-ingress
+  namespace: truenorth-demo
+  labels:
+    project: truenorth-demo
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - openclaw.truenorth.madeformeai.com
+  rules:
+    - host: openclaw.truenorth.madeformeai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: truenorth-openclaw
+                port:
+                  number: 18789

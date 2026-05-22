@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: truenorth-ingress
+  namespace: truenorth-demo
+  labels:
+    project: truenorth-demo
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - truenorth.madeformeai.com
+  rules:
+    - host: truenorth.madeformeai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: truenorth-frontend
+                port:
+                  number: 80
