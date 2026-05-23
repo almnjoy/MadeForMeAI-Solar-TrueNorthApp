@@ -84,13 +84,14 @@ spec:
 
 ---
 ## ── Traefik Forward Auth Middleware ──────────────────────────────────────────
-# Named truenorth-authentik-forwardauth — referenced in ingress annotations as:
-# traefik.ingress.kubernetes.io/router.middlewares: truenorth-demo-truenorth-authentik-forwardauth@kubernetescrd
+# Must live in traefik namespace — Traefik only watches its own namespace for CRDs.
+# Referenced in ingress annotations as:
+# traefik.ingress.kubernetes.io/router.middlewares: traefik-truenorth-authentik-forwardauth@kubernetescrd
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: truenorth-authentik-forwardauth
-  namespace: truenorth-demo
+  namespace: traefik
 spec:
   forwardAuth:
     address: http://truenorth-authentik-proxy.truenorth-demo.svc.cluster.local:9000/outpost.goauthentik.io/auth/traefik
