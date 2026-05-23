@@ -1,3 +1,71 @@
+## ── Hermes Config ────────────────────────────────────────────────────────────
+# Mounted at /opt/data/config.yaml via subPath — sets model, memory, personalities.
+# OPENROUTER_API_KEY env var is auto-detected by Hermes and registered in credential pool.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: truenorth-hermes-config
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-hermes
+    project: truenorth-demo
+data:
+  config.yaml: |
+    model:
+      default: moonshotai/kimi-k2
+      provider: openrouter
+      base_url: https://openrouter.ai/api/v1
+      api_mode: chat_completions
+    providers: {}
+    fallback_providers: []
+    toolsets:
+      - hermes-cli
+    agent:
+      max_turns: 60
+      gateway_timeout: 1800
+      api_max_retries: 3
+      tool_use_enforcement: auto
+      reasoning_effort: medium
+      personalities:
+        helpful: You are a helpful, friendly AI assistant for TrueNorth Solar.
+        solar-sales: You are a knowledgeable solar sales assistant. You qualify leads, explain financing options, estimate ROI based on utility bills, and help schedule site surveys. Be consultative, not pushy.
+        solar-support: You are a solar support specialist helping TrueNorth Solar customers with system monitoring, troubleshooting, and warranty claims.
+        solar-doc: You are a solar documentation expert helping with permits, utility interconnection paperwork, HOA approvals, and incentive documentation.
+    memory:
+      memory_enabled: true
+      user_profile_enabled: true
+      memory_char_limit: 2200
+      user_char_limit: 1375
+      nudge_interval: 10
+      flush_min_turns: 6
+    context:
+      engine: compressor
+    compression:
+      enabled: true
+      threshold: 0.5
+      target_ratio: 0.2
+      protect_last_n: 20
+    openrouter:
+      response_cache: true
+      response_cache_ttl: 300
+    display:
+      personality: solar-sales
+      streaming: true
+      language: en
+    approvals:
+      mode: manual
+      timeout: 60
+    session_reset:
+      mode: both
+      idle_minutes: 1440
+      at_hour: 4
+    security:
+      redact_secrets: true
+    logging:
+      level: INFO
+    _config_version: 23
+
+---
 ## ── Hermes Agent Storage ─────────────────────────────────────────────────────
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -43,7 +111,18 @@ spec:
           args: ["gateway", "run"]
           ports:
             - containerPort: 8642
+              name: api
+            - containerPort: 9119
+              name: dashboard
           env:
+            - name: HERMES_ALLOW_ROOT_GATEWAY
+              value: "1"
+            - name: HERMES_DASHBOARD
+              value: "1"
+            - name: HERMES_DASHBOARD_HOST
+              value: "0.0.0.0"
+            - name: HERMES_DASHBOARD_PORT
+              value: "9119"
             - name: API_SERVER_ENABLED
               value: "true"
             - name: API_SERVER_HOST
@@ -62,4 +141,143 @@ spec:
                 secretKeyRef:
                   name: truenorth-env
                   key: HERMES_OPENROUTER_KEY
-          volumeM
+          volumeMounts:
+            - name: hermes-data
+              mountPath: /opt/data
+            - name: hermes-config
+              mountPath: /opt/data/config.yaml
+              subPath: config.yaml
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8642
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8642
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+      volumes:
+        - name: hermes-data
+          persistentVolumeClaim:
+            claimName: truenorth-hermes-pvc
+        - name: hermes-config
+          configMap:
+            name: truenorth-hermes-config
+
+---
+## ── Hermes Service ───────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: truenorth-hermes
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-hermes
+    project: truenorth-demo
+spec:
+  selector:
+    app: truenorth-hermes
+  ports:
+    - name: api
+      port: 8642
+      targetPort: 8642
+    - name: dashboard
+      port: 9119
+      targetPort: 9119
+
+---
+## ── Hermes Ingress ───────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: truenorth-hermes-ingress
+  namespace: truenorth-demo
+  labels:
+    project: truenorth-demo
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - truenorth-hermes.madeformeai.com
+  rules:
+    - host: truenorth-hermes.madeformeai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: truenorth-hermes
+                port:
+                  number: 8642
+
+---
+## ── Hermes Dashboard Ingress ─────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: truenorth-hermes-dashboard-ingress
+  namespace: truenorth-demo
+  labels:
+    project: truenorth-demo
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - hermes-truenorth.madeformeai.com
+  rules:
+    - host: hermes-truenorth.madeformeai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: truenorth-hermes
+                port:
+                  number: 9119
+
+---
+## ── OpenClaw Dashboard Ingress ───────────────────────────────────────────────
+# Alias for truenorth-openclaw.madeformeai.com — both point to port 18789
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: truenorth-openclaw-dashboard-ingress
+  namespace: truenorth-demo
+  labels:
+    project: truenorth-demo
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - openclaw-truenorth.madeformeai.com
+  rules:
+    - host: openclaw-truenorth.madeformeai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: truenorth-openclaw
+                port:
+                  number: 18789

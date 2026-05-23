@@ -1,0 +1,157 @@
+{
+  "env": {
+    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+  },
+  "gateway": {
+    "bind": "lan",
+    "trustedProxies": [
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16"
+    ],
+    "auth": {
+      "mode": "trusted-proxy",
+      "trustedProxy": {
+        "userHeader": "X-authentik-email",
+        "allowUsers": [
+          "solardemo@quickitprojects.com",
+          "tamara@truenorthsolar.com",
+          "carlos@truenorthsolar.com"
+        ]
+      }
+    },
+    "controlUi": {
+      "allowedOrigins": [
+        "https://truenorth.madeformeai.com",
+        "https://truenorth-openclaw.madeformeai.com",
+        "https://chat.madeformeai.com"
+      ],
+      "allowInsecureAuth": true,
+      "dangerouslyDisableDeviceAuth": true
+    }
+  },
+  "agents": {
+    "defaults": {
+      "skipBootstrap": true,
+      "model": {
+        "primary": "openrouter/moonshotai/kimi-k2"
+      },
+      "agentRuntime": {
+        "id": "auto"
+      },
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "heartbeat": {
+        "every": "2h",
+        "target": "none",
+        "isolatedSession": true,
+        "lightContext": true,
+        "skipWhenBusy": true,
+        "activeHours": {
+          "start": "09:00",
+          "end": "21:00"
+        }
+      },
+      "models": {
+        "openrouter/moonshotai/kimi-k2": {
+          "alias": "⭐ Smart Assistant (Recommended)"
+        },
+        "openrouter/google/gemini-3.1-flash-lite-preview": {
+          "alias": "⚡ Quick Answers"
+        },
+        "openrouter/x-ai/grok-4.3": {
+          "alias": "🧠 Logic & Reasoning"
+        },
+        "openrouter/anthropic/claude-haiku-4-5": {
+          "alias": "💻 Coding Helper"
+        },
+        "openrouter/moonshotai/kimi-k2.6": {
+          "alias": "🔬 Deep Research"
+        },
+        "openrouter/anthropic/claude-sonnet-4-6": {
+          "alias": "💎 Premium Claude"
+        },
+        "openrouter/deepseek/deepseek-v4-flash": {
+          "alias": "💸 Ultra Cheap"
+        }
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "name": "TrueNorth Solar AI",
+        "workspace": "/home/node/.openclaw/workspace",
+        "identity": {
+          "name": "TrueNorth Solar AI",
+          "avatar": "assets/clouds.png"
+        },
+        "thinkingDefault": "low"
+      },
+      {
+        "id": "solar-sales",
+        "name": "Solar Sales Assistant",
+        "workspace": "/home/node/.openclaw/workspace-sales",
+        "agentDir": "/home/node/.openclaw/agents/solar-sales/agent",
+        "model": {
+          "primary": "openrouter/moonshotai/kimi-k2"
+        },
+        "identity": {
+          "name": "Solar Sales Assistant",
+          "avatar": "assets/computer.png"
+        },
+        "thinkingDefault": "low",
+        "fastModeDefault": false
+      }
+    ]
+  },
+  "session": {
+    "reset": {
+      "mode": "daily",
+      "atHour": 4,
+      "idleMinutes": 240
+    }
+  },
+  "tools": {
+    "elevated": {
+      "enabled": true,
+      "allowFrom": {
+        "webchat": ["*"]
+      }
+    },
+    "web": {
+      "search": {
+        "provider": "duckduckgo"
+      },
+      "fetch": {
+        "enabled": true
+      }
+    }
+  },
+  "plugins": {
+    "entries": {
+      "openrouter": {
+        "enabled": true
+      },
+      "duckduckgo": {
+        "enabled": true
+      },
+      "memory-core": {
+        "enabled": true
+      },
+      "active-memory": {
+        "enabled": true
+      }
+    }
+  },
+  "skills": {
+    "entries": {
+      "healthcheck": {
+        "enabled": false
+      }
+    }
+  },
+  "update": {
+    "checkOnStart": false
+  }
+}

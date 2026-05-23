@@ -1,0 +1,131 @@
+# TrueNorth Solar — Hermes Agent config.yaml
+# Adapted from production template. Mounted at /opt/data/config.yaml via ConfigMap.
+# OPENROUTER_API_KEY is injected as env var — Hermes auto-registers it in credential pool.
+
+model:
+  default: moonshotai/kimi-k2
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  api_mode: chat_completions
+
+providers: {}
+fallback_providers: []
+credential_pool_strategies: {}
+
+toolsets:
+  - hermes-cli
+
+agent:
+  max_turns: 60
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+  tool_use_enforcement: auto
+  gateway_timeout_warning: 900
+  clarify_timeout: 600
+  gateway_notify_interval: 180
+  gateway_auto_continue_freshness: 3600
+  image_input_mode: auto
+  disabled_toolsets: []
+  verbose: false
+  reasoning_effort: medium
+  personalities:
+    helpful: You are a helpful, friendly AI assistant for TrueNorth Solar. You help homeowners understand solar energy, estimate savings, and guide them through the solar installation process.
+    solar-sales: You are a knowledgeable solar sales assistant. You qualify leads, explain financing options, estimate ROI based on utility bills, and help schedule site surveys. Be consultative, not pushy.
+    solar-support: You are a solar support specialist. You help existing TrueNorth Solar customers with system monitoring, troubleshooting, maintenance questions, and warranty claims.
+    solar-doc: You are a solar documentation expert. You help with permit applications, utility interconnection paperwork, HOA approvals, and incentive/rebate documentation.
+
+terminal:
+  backend: local
+  cwd: .
+  timeout: 180
+  auto_source_bashrc: true
+  persistent_shell: true
+  lifetime_seconds: 300
+
+web:
+  backend: ''
+  search_backend: ''
+  extract_backend: ''
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 2200
+  user_char_limit: 1375
+  nudge_interval: 10
+  flush_min_turns: 6
+
+context:
+  engine: compressor
+
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+  protect_last_n: 20
+  hygiene_hard_message_limit: 400
+  protect_first_n: 3
+
+prompt_caching:
+  cache_ttl: 5m
+
+openrouter:
+  response_cache: true
+  response_cache_ttl: 300
+  min_coding_score: 0.65
+
+display:
+  compact: false
+  personality: solar-sales
+  resume_display: full
+  streaming: true
+  show_cost: false
+  language: en
+
+dashboard:
+  theme: default
+  show_token_analytics: false
+
+approvals:
+  mode: manual
+  timeout: 60
+  cron_mode: deny
+
+tools:
+  elevated:
+    enabled: true
+
+logging:
+  level: INFO
+  max_size_mb: 5
+  backup_count: 3
+
+sessions:
+  auto_prune: false
+  retention_days: 90
+  min_interval_hours: 24
+
+session_reset:
+  mode: both
+  idle_minutes: 1440
+  at_hour: 4
+
+curator:
+  enabled: true
+  interval_hours: 168
+  min_idle_hours: 2
+  stale_after_days: 30
+  archive_after_days: 90
+
+security:
+  redact_secrets: true
+  tirith_enabled: true
+  tirith_path: tirith
+  tirith_timeout: 5
+  tirith_fail_open: true
+
+update:
+  checkOnStart: false
+
+_config_version: 23

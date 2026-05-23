@@ -1,3 +1,194 @@
+## ── OpenClaw Storage ─────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: truenorth-openclaw-pvc
+  namespace: truenorth-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+## ── OpenClaw Config ───────────────────────────────────────────────────────────
+# Mounted at /home/node/.openclaw/config.json via subPath
+# Edit openclaw-config.json and re-apply this file to update config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: truenorth-openclaw-config
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-openclaw
+    project: truenorth-demo
+data:
+  config.json: |
+    {
+      "env": {
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+      },
+      "gateway": {
+        "bind": "lan",
+        "trustedProxies": [
+          "10.0.0.0/8",
+          "172.16.0.0/12",
+          "192.168.0.0/16"
+        ],
+        "auth": {
+          "mode": "trusted-proxy",
+          "trustedProxy": {
+            "userHeader": "X-authentik-email",
+            "allowUsers": [
+              "solardemo@quickitprojects.com",
+              "tamara@truenorthsolar.com",
+              "carlos@truenorthsolar.com"
+            ]
+          }
+        },
+        "controlUi": {
+          "allowedOrigins": [
+            "https://truenorth.madeformeai.com",
+            "https://truenorth-openclaw.madeformeai.com",
+            "https://chat.madeformeai.com"
+          ],
+          "allowInsecureAuth": true,
+          "dangerouslyDisableDeviceAuth": true
+        }
+      },
+      "agents": {
+        "defaults": {
+          "skipBootstrap": true,
+          "model": {
+            "primary": "openrouter/moonshotai/kimi-k2"
+          },
+          "agentRuntime": {
+            "id": "auto"
+          },
+          "compaction": {
+            "mode": "safeguard"
+          },
+          "heartbeat": {
+            "every": "2h",
+            "target": "none",
+            "isolatedSession": true,
+            "lightContext": true,
+            "skipWhenBusy": true,
+            "activeHours": {
+              "start": "09:00",
+              "end": "21:00"
+            }
+          },
+          "models": {
+            "openrouter/moonshotai/kimi-k2": {
+              "alias": "⭐ Smart Assistant (Recommended)"
+            },
+            "openrouter/google/gemini-3.1-flash-lite-preview": {
+              "alias": "⚡ Quick Answers"
+            },
+            "openrouter/x-ai/grok-4.3": {
+              "alias": "🧠 Logic & Reasoning"
+            },
+            "openrouter/anthropic/claude-haiku-4-5": {
+              "alias": "💻 Coding Helper"
+            },
+            "openrouter/moonshotai/kimi-k2.6": {
+              "alias": "🔬 Deep Research"
+            },
+            "openrouter/anthropic/claude-sonnet-4-6": {
+              "alias": "💎 Premium Claude"
+            },
+            "openrouter/deepseek/deepseek-v4-flash": {
+              "alias": "💸 Ultra Cheap"
+            }
+          }
+        },
+        "list": [
+          {
+            "id": "main",
+            "name": "TrueNorth Solar AI",
+            "workspace": "/home/node/.openclaw/workspace",
+            "identity": {
+              "name": "TrueNorth Solar AI",
+              "avatar": "assets/clouds.png"
+            },
+            "thinkingDefault": "low"
+          },
+          {
+            "id": "solar-sales",
+            "name": "Solar Sales Assistant",
+            "workspace": "/home/node/.openclaw/workspace-sales",
+            "agentDir": "/home/node/.openclaw/agents/solar-sales/agent",
+            "model": {
+              "primary": "openrouter/moonshotai/kimi-k2"
+            },
+            "identity": {
+              "name": "Solar Sales Assistant",
+              "avatar": "assets/computer.png"
+            },
+            "thinkingDefault": "low",
+            "fastModeDefault": false
+          }
+        ]
+      },
+      "session": {
+        "reset": {
+          "mode": "daily",
+          "atHour": 4,
+          "idleMinutes": 240
+        }
+      },
+      "tools": {
+        "elevated": {
+          "enabled": true,
+          "allowFrom": {
+            "webchat": ["*"]
+          }
+        },
+        "web": {
+          "search": {
+            "provider": "duckduckgo"
+          },
+          "fetch": {
+            "enabled": true
+          }
+        }
+      },
+      "plugins": {
+        "entries": {
+          "openrouter": {
+            "enabled": true
+          },
+          "duckduckgo": {
+            "enabled": true
+          },
+          "memory-core": {
+            "enabled": true
+          },
+          "active-memory": {
+            "enabled": true
+          }
+        }
+      },
+      "skills": {
+        "entries": {
+          "healthcheck": {
+            "enabled": false
+          }
+        }
+      },
+      "update": {
+        "checkOnStart": false
+      }
+    }
+
+---
+## ── OpenClaw Deployment ───────────────────────────────────────────────────────
+# Image: ghcr.io/openclaw/openclaw:2026.5.20
+# Port:  18789
+# Auth:  trusted-proxy via Authentik (X-authentik-email header)
+# Config: mounted from ConfigMap at /home/node/.openclaw/config.json
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,6 +202,8 @@ spec:
   selector:
     matchLabels:
       app: truenorth-openclaw
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -23,37 +216,46 @@ spec:
           ports:
             - containerPort: 18789
           env:
-            - name: OPENCLAW_GATEWAY_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: OPENCLAW_GATEWAY_TOKEN
             - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: truenorth-env
                   key: OPENCLAW_OPENROUTER_KEY
+          volumeMounts:
+            - name: openclaw-data
+              mountPath: /home/node/.openclaw
+            - name: openclaw-config
+              mountPath: /home/node/.openclaw/config.json
+              subPath: config.json
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 512Mi
             limits:
               cpu: 1000m
               memory: 2Gi
           readinessProbe:
             tcpSocket:
               port: 18789
-            initialDelaySeconds: 15
+            initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 5
           livenessProbe:
             tcpSocket:
               port: 18789
-            initialDelaySeconds: 30
+            initialDelaySeconds: 40
             periodSeconds: 30
             failureThreshold: 3
+      volumes:
+        - name: openclaw-data
+          persistentVolumeClaim:
+            claimName: truenorth-openclaw-pvc
+        - name: openclaw-config
+          configMap:
+            name: truenorth-openclaw-config
 
 ---
+## ── OpenClaw Service ─────────────────────────────────────────────────────────
 apiVersion: v1
 kind: Service
 metadata:
@@ -70,6 +272,7 @@ spec:
       targetPort: 18789
 
 ---
+## ── OpenClaw Ingress ─────────────────────────────────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -88,4 +291,10 @@ spec:
     - host: truenorth-openclaw.madeformeai.com
       http:
         paths:
-   
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: truenorth-openclaw
+                port:
+                  number: 18789
