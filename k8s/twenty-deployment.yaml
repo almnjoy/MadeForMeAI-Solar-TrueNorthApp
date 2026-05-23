@@ -1,3 +1,4 @@
+## ── Twenty CRM Storage ───────────────────────────────────────────────────────
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -11,6 +12,7 @@ spec:
       storage: 10Gi
 
 ---
+## ── Twenty Server ────────────────────────────────────────────────────────────
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,11 +34,10 @@ spec:
         app: truenorth-twenty
         project: truenorth-demo
     spec:
-      containers:
-        - name: twenty
-          image: twentyhq/twenty:latest
-          ports:
-            - containerPort: 3000
+      initContainers:
+        - name: twenty-migrate
+          image: twentycrm/twenty:latest
+          command: ["node", "dist/src/database/commands/migrate-prod.js"]
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -55,36 +56,145 @@ spec:
                 secretKeyRef:
                   name: truenorth-env
                   key: TWENTY_SERVER_URL
-            - name: STORAGE_TYPE
+            - name: NODE_ENV
+              value: "production"
+      containers:
+        - name: twenty
+          image: twentycrm/twenty:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: truenorth-env
-                  key: TWENTY_STORAGE_TYPE
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              value: "redis://truenorth-redis.truenorth-demo.svc.cluster.local:6379"
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: TWENTY_APP_SECRET
+            - name: SERVER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: TWENTY_SERVER_URL
+            - name: FRONT_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: TWENTY_SERVER_URL
+            - name: STORAGE_TYPE
+              value: "local"
             - name: STORAGE_LOCAL_PATH
               value: "/app/packages/twenty-server/.local-storage"
+            - name: MESSAGE_QUEUE_TYPE
+              value: "bull-mq"
           volumeMounts:
             - name: twenty-storage
               mountPath: /app/packages/twenty-server/.local-storage
           resources:
             requests:
-              cpu: 200m
-              memory: 512Mi
+              cpu: 250m
+              memory: 768Mi
             limits:
               cpu: 1000m
-              memory: 1Gi
+              memory: 1.5Gi
           readinessProbe:
             httpGet:
               path: /healthz
               port: 3000
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 8
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            failureThreshold: 3
       volumes:
         - name: twenty-storage
           persistentVolumeClaim:
             claimName: truenorth-twenty-pvc
 
 ---
+## ── Twenty Worker ────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truenorth-twenty-worker
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-twenty-worker
+    project: truenorth-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truenorth-twenty-worker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: truenorth-twenty-worker
+        project: truenorth-demo
+    spec:
+      containers:
+        - name: twenty-worker
+          image: twentycrm/twenty:latest
+          command: ["yarn", "worker:prod"]
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              value: "redis://truenorth-redis.truenorth-demo.svc.cluster.local:6379"
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: TWENTY_APP_SECRET
+            - name: SERVER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: TWENTY_SERVER_URL
+            - name: STORAGE_TYPE
+              value: "local"
+            - name: STORAGE_LOCAL_PATH
+              value: "/app/packages/twenty-server/.local-storage"
+            - name: MESSAGE_QUEUE_TYPE
+              value: "bull-mq"
+          volumeMounts:
+            - name: twenty-storage
+              mountPath: /app/packages/twenty-server/.local-storage
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+      volumes:
+        - name: twenty-storage
+          persistentVolumeClaim:
+            claimName: truenorth-twenty-pvc
+
+---
+## ── Twenty Service ───────────────────────────────────────────────────────────
 apiVersion: v1
 kind: Service
 metadata:
@@ -101,6 +211,7 @@ spec:
       targetPort: 3000
 
 ---
+## ── Twenty Ingress ───────────────────────────────────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
