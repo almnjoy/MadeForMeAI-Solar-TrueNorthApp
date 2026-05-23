@@ -1,8 +1,12 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, GripVertical } from 'lucide-react';
+import { Plus, GripVertical, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import {
+  getOpportunities, updateOpportunityStage,
+  microsToDollars, fullName, isConfigured,
+  STAGE_MAP, STAGE_REVERSE,
+} from '@/lib/twentyClient.js';
 
 const COLUMNS = ['New Lead', 'Contacted', 'Site Survey Booked', 'Proposal Sent', 'Won', 'Lost'];
 
@@ -15,25 +19,50 @@ const STATUS_COLORS = {
   'Lost':               'bg-red-100 text-red-700 border-red-200',
 };
 
-const INITIAL_LEADS = [
-  { id: '1',  name: 'James Okafor',   status: 'New Lead',           province: 'ON', monthly_bill: 280, assigned_to: 'Sarah' },
-  { id: '2',  name: 'Maria Santos',   status: 'Contacted',          province: 'BC', monthly_bill: 310, assigned_to: 'Mike' },
-  { id: '3',  name: 'David Chen',     status: 'Contacted',          province: 'AB', monthly_bill: 195, assigned_to: 'Sarah' },
-  { id: '4',  name: 'Rachel Kim',     status: 'Proposal Sent',      province: 'ON', monthly_bill: 420, assigned_to: 'Mike' },
-  { id: '5',  name: 'Tom Bergman',    status: 'Won',                province: 'BC', monthly_bill: 350, assigned_to: 'Sarah' },
-  { id: '6',  name: 'Aisha Patel',    status: 'New Lead',           province: 'QC', monthly_bill: 240, assigned_to: 'Carlos' },
-  { id: '7',  name: 'Luis Fernandez', status: 'Won',                province: 'ON', monthly_bill: 380, assigned_to: 'Carlos' },
-  { id: '8',  name: 'Jenny Larsen',   status: 'Proposal Sent',      province: 'MB', monthly_bill: 210, assigned_to: 'Mike' },
-  { id: '9',  name: 'Preet Johal',    status: 'Site Survey Booked', province: 'BC', monthly_bill: 330, assigned_to: 'Carlos' },
-  { id: '10', name: 'Tyler Moss',     status: 'New Lead',           province: 'AB', monthly_bill: 175, assigned_to: 'Sarah' },
-  { id: '11', name: 'Sandra Ho',      status: 'Lost',               province: 'ON', monthly_bill: 220, assigned_to: 'Mike' },
-  { id: '12', name: 'Raj Mehta',      status: 'Site Survey Booked', province: 'AB', monthly_bill: 295, assigned_to: 'Sarah' },
-];
+// Map Twenty opportunity to our card shape
+function oppToCard(opp) {
+  const contact = opp.pointOfContact;
+  const amount  = microsToDollars(opp.amount?.amountMicros);
+  return {
+    id:          opp.id,
+    name:        opp.name || (contact ? fullName(contact.name) : 'Untitled'),
+    status:      STAGE_MAP[opp.stage] || 'New Lead',
+    company:     opp.company?.name || '',
+    amount,
+    email:       contact?.emails?.primaryEmail || '',
+    updatedAt:   opp.updatedAt,
+  };
+}
 
 export default function PipelinePage() {
-  const [leads, setLeads] = useState(INITIAL_LEADS);
-  const [loading, setLoading] = useState(false);
+  const [leads, setLeads]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(null); // id of card being saved
+  const [usingMock, setUsingMock] = useState(false);
+  const [error, setError]         = useState(null);
   const [draggedLead, setDraggedLead] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    if (!isConfigured()) {
+      setUsingMock(true);
+      setLeads(MOCK_LEADS);
+      setLoading(false);
+      return;
+    }
+    try {
+      const opps = await getOpportunities();
+      setLeads(opps.map(oppToCard));
+    } catch (err) {
+      setError(err.message);
+      setUsingMock(true);
+      setLeads(MOCK_LEADS);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const handleDragStart = (e, lead) => {
     setDraggedLead(lead);
@@ -46,89 +75,92 @@ export default function PipelinePage() {
     setDraggedLead(null);
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e, columnStatus) => {
+  const handleDrop = async (e, columnStatus) => {
     e.preventDefault();
     if (!draggedLead || draggedLead.status === columnStatus) return;
+
+    // Optimistic update
     setLeads(prev => prev.map(l => l.id === draggedLead.id ? { ...l, status: columnStatus } : l));
+
+    // Persist to Twenty if configured
+    if (isConfigured() && !usingMock) {
+      const twentyStage = STAGE_REVERSE[columnStatus];
+      if (twentyStage) {
+        setSaving(draggedLead.id);
+        try {
+          await updateOpportunityStage(draggedLead.id, twentyStage);
+        } catch (err) {
+          console.error('Failed to update stage:', err);
+          // Revert on failure
+          setLeads(prev => prev.map(l => l.id === draggedLead.id ? { ...l, status: draggedLead.status } : l));
+        } finally {
+          setSaving(null);
+        }
+      }
+    }
   };
 
   const getLeadsByStatus = (status) => leads.filter(l => l.status === status);
 
   if (loading) {
-    return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+    return <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
   }
 
   return (
-    <div className="h-[calc(100vh-2rem)] flex flex-col space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="h-[calc(100vh-2rem)] flex flex-col space-y-4">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Sales Pipeline</h1>
-          <p className="text-muted-foreground">Drag and drop leads to update their status.</p>
+          <p className="text-muted-foreground">Drag and drop to move deals between stages.</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Lead
-        </Button>
+        <div className="flex items-center gap-3">
+          {usingMock && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <AlertCircle className="w-3.5 h-3.5" />
+              {error ? 'API error — sample data' : 'Sample data — configure API key'}
+            </div>
+          )}
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            <RefreshCw className="w-3.5 h-3.5 mr-2" />
+            Refresh
+          </Button>
+          <Button
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            onClick={() => window.open(`${import.meta.env.VITE_TWENTY_API_URL}/objects/opportunities/new`, '_blank')}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Lead
+          </Button>
+        </div>
       </div>
 
-      <div className="flex-1 flex gap-6 overflow-x-auto pb-4 snap-x">
+      <div className="flex-1 flex gap-4 overflow-x-auto pb-4 snap-x min-h-0">
         {COLUMNS.map((column) => (
           <div
             key={column}
-            className="flex-shrink-0 w-80 bg-muted/50 rounded-xl p-4 flex flex-col snap-start border border-border"
-            onDragOver={handleDragOver}
+            className="flex-shrink-0 w-72 bg-muted/50 rounded-xl p-3 flex flex-col snap-start border border-border"
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
             onDrop={(e) => handleDrop(e, column)}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-sm text-foreground">{column}</h3>
-              <span className="bg-white text-muted-foreground text-xs px-2 py-1 rounded-full shadow-sm">
+              <span className="bg-white dark:bg-card text-muted-foreground text-xs px-2 py-0.5 rounded-full shadow-sm border border-border">
                 {getLeadsByStatus(column).length}
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto space-y-2.5 scrollbar-hide min-h-[120px]">
               {getLeadsByStatus(column).map(lead => (
-                <div
+                <motion.div
                   key={lead.id}
+                  layout
                   draggable
                   onDragStart={(e) => handleDragStart(e, lead)}
                   onDragEnd={handleDragEnd}
-                  className="bg-card p-4 rounded-lg shadow-sm border border-border cursor-grab active:cursor-grabbing hover:border-primary/30 transition-colors group relative"
+                  className={"bg-card p-3.5 rounded-lg shadow-sm border cursor-grab active:cursor-grabbing hover:border-primary/30 transition-colors group relative " + (saving === lead.id ? 'opacity-60 pointer-events-none' : 'border-border')}
                 >
                   <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity">
-                    <GripVertical className="w-4 h-4" />
+                    <GripVertical className="w-3.5 h-3.5" />
                   </div>
 
-                  <div className={"inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border mb-2 " + (STATUS_COLORS[lead.status] || '')}>
-                    {lead.province}
-                  </div>
-
-                  <h4 className="font-semibold text-foreground mb-1">{lead.name}</h4>
-
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                    <span className="font-medium text-foreground">${lead.monthly_bill}/mo</span>
-                    <span className="flex items-center gap-1">
-                      <div className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[8px] font-bold">
-                        {lead.assigned_to.charAt(0)}
-                      </div>
-                      {lead.assigned_to}
-                    </span>
-                  </div>
-                </div>
-              ))}
-
-              {draggedLead && draggedLead.status !== column && (
-                <div className="h-24 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 transition-colors" />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+                 

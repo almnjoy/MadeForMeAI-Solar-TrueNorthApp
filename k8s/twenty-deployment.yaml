@@ -72,164 +72,25 @@ spec:
               value: "/app/packages/twenty-server/.local-storage"
             - name: MESSAGE_QUEUE_TYPE
               value: "bull-mq"
-            # psql env vars — used by Twenty's startup health check script
-            - name: PGHOST
-              value: "truenorth-postgres.truenorth-demo.svc.cluster.local"
-            - name: PGPORT
-              value: "5432"
-            - name: PGUSER
+            # SSO — Authentik OIDC
+            - name: AUTH_SSO_ENABLED
               valueFrom:
                 secretKeyRef:
                   name: truenorth-env
-                  key: POSTGRES_USER
-            - name: PGPASSWORD
+                  key: AUTH_SSO_ENABLED
+            - name: AUTH_SSO_OIDC_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: truenorth-env
-                  key: POSTGRES_PASSWORD
-            - name: PGDATABASE
+                  key: AUTH_SSO_OIDC_CLIENT_ID
+            - name: AUTH_SSO_OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: truenorth-env
-                  key: POSTGRES_DB
-          volumeMounts:
-            - name: twenty-storage
-              mountPath: /app/packages/twenty-server/.local-storage
-          resources:
-            requests:
-              cpu: 250m
-              memory: 768Mi
-            limits:
-              cpu: 1000m
-              memory: 1.5Gi
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 3000
-            initialDelaySeconds: 60
-            periodSeconds: 15
-            failureThreshold: 8
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 3000
-            initialDelaySeconds: 90
-            periodSeconds: 30
-            failureThreshold: 3
-      volumes:
-        - name: twenty-storage
-          persistentVolumeClaim:
-            claimName: truenorth-twenty-pvc
-
----
-## ── Twenty Worker ────────────────────────────────────────────────────────────
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: truenorth-twenty-worker
-  namespace: truenorth-demo
-  labels:
-    app: truenorth-twenty-worker
-    project: truenorth-demo
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: truenorth-twenty-worker
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: truenorth-twenty-worker
-        project: truenorth-demo
-    spec:
-      containers:
-        - name: twenty-worker
-          image: twentycrm/twenty:latest
-          command: ["yarn", "worker:prod"]
-          env:
-            - name: NODE_ENV
-              value: "production"
-            - name: DATABASE_URL
+                  key: AUTH_SSO_OIDC_CLIENT_SECRET
+            - name: AUTH_SSO_OIDC_ISSUER
               valueFrom:
                 secretKeyRef:
                   name: truenorth-env
-                  key: DATABASE_URL
-            - name: REDIS_URL
-              value: "redis://truenorth-redis.truenorth-demo.svc.cluster.local:6379"
-            - name: APP_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: TWENTY_APP_SECRET
-            - name: SERVER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: TWENTY_SERVER_URL
-            - name: STORAGE_TYPE
-              value: "local"
-            - name: STORAGE_LOCAL_PATH
-              value: "/app/packages/twenty-server/.local-storage"
-            - name: MESSAGE_QUEUE_TYPE
-              value: "bull-mq"
-          volumeMounts:
-            - name: twenty-storage
-              mountPath: /app/packages/twenty-server/.local-storage
-          resources:
-            requests:
-              cpu: 100m
-              memory: 512Mi
-            limits:
-              cpu: 500m
-              memory: 1Gi
-      volumes:
-        - name: twenty-storage
-          persistentVolumeClaim:
-            claimName: truenorth-twenty-pvc
-
----
-## ── Twenty Service ───────────────────────────────────────────────────────────
-apiVersion: v1
-kind: Service
-metadata:
-  name: truenorth-twenty
-  namespace: truenorth-demo
-  labels:
-    app: truenorth-twenty
-    project: truenorth-demo
-spec:
-  selector:
-    app: truenorth-twenty
-  ports:
-    - port: 3000
-      targetPort: 3000
-
----
-## ── Twenty Ingress ───────────────────────────────────────────────────────────
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: truenorth-twenty-ingress
-  namespace: truenorth-demo
-  labels:
-    project: truenorth-demo
-  annotations:
-    kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/router.tls: "true"
-spec:
-  tls:
-    - hosts:
-        - crm.truenorth.madeformeai.com
-  rules:
-    - host: crm.truenorth.madeformeai.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: truenorth-twenty
-                port:
-                  number: 3000
+                  key: AUTH_SSO_OIDC_ISSUER
+            # psql env vars — used by Twenty's startup h

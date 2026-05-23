@@ -1,3 +1,21 @@
+## ── Hermes Agent Storage ─────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: truenorth-hermes-pvc
+  namespace: truenorth-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+## ── Hermes Agent Deployment ──────────────────────────────────────────────────
+# Image: nousresearch/hermes-agent (Docker Hub)
+# Port:  8642 (OpenAI-compatible API + /health endpoint)
+# Docs:  https://hermes-agent.nousresearch.com/docs/user-guide/docker
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,6 +29,8 @@ spec:
   selector:
     matchLabels:
       app: truenorth-hermes
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -19,60 +39,27 @@ spec:
     spec:
       containers:
         - name: hermes
-          image: ghcr.io/almnjoy/hermes:latest
+          image: nousresearch/hermes-agent:latest
+          args: ["gateway", "run"]
           ports:
-            - containerPort: 8080
+            - containerPort: 8642
           env:
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: "0.0.0.0"
+            - name: API_SERVER_PORT
+              value: "8642"
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: HERMES_API_KEY
+            - name: API_SERVER_CORS_ORIGINS
+              value: "https://truenorth.madeformeai.com"
             - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: truenorth-env
                   key: HERMES_OPENROUTER_KEY
-            - name: BOT_TOKEN_DOC
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: HERMES_BOT_TOKEN_DOC
-            - name: BOT_TOKEN_SUPPORT
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: HERMES_BOT_TOKEN_SUPPORT
-            - name: BOT_TOKEN_SALES
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: HERMES_BOT_TOKEN_SALES
-            - name: BOT_TOKEN_LEAD
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: HERMES_BOT_TOKEN_LEAD
-            - name: BOT_TOKEN_CONTROLLER
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: HERMES_BOT_TOKEN_CONTROLLER
-          resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: truenorth-hermes
-  namespace: truenorth-demo
-  labels:
-    app: truenorth-hermes
-    project: truenorth-demo
-spec:
-  selector:
-    app: truenorth-hermes
-  ports:
-    - port: 8080
-      targetPort: 8080
+          volumeM
