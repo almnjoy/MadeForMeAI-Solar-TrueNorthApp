@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { exchangeCode } from '@/lib/authClient.js';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,7 +39,8 @@ export default function CallbackPage() {
 
       try {
         processedRef.current = true;
-        await handleCallback(code, state);
+        const tokenData = await exchangeCode(code, state);
+        handleCallback(tokenData);
         toast.success('Successfully logged in');
         navigate('/dashboard', { replace: true });
       } catch (err) {
