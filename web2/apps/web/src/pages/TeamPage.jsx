@@ -7,11 +7,9 @@ import { Card } from '@/components/ui/card';
 import { ArrowUpDown } from 'lucide-react';
 
 const MOCK_TEAM = [
-  { id: '1', name: 'Sarah Mitchell', role: 'Senior Sales Rep',   leads_assigned: 12, deals_closed_this_week: 3, status: 'Active' },
-  { id: '2', name: 'Mike Torres',    role: 'Sales Rep',           leads_assigned: 9,  deals_closed_this_week: 2, status: 'Active' },
-  { id: '3', name: 'Carlos Rivera',  role: 'Sales Rep',           leads_assigned: 7,  deals_closed_this_week: 1, status: 'Active' },
-  { id: '4', name: 'Priya Nair',     role: 'Sales Manager',       leads_assigned: 3,  deals_closed_this_week: 0, status: 'Away' },
-  { id: '5', name: 'Jordan Wells',   role: 'Support Specialist',  leads_assigned: 5,  deals_closed_this_week: 2, status: 'Active' },
+  { id: '1', name: 'Dustin Allema',  role: 'Sales Manager',  leads_assigned: 4,  deals_closed_this_week: 1, status: 'Active' },
+  { id: '2', name: 'Rep One',        role: 'Sales Rep',      leads_assigned: 11, deals_closed_this_week: 3, status: 'Active' },
+  { id: '3', name: 'Rep Two',        role: 'Sales Rep',      leads_assigned: 8,  deals_closed_this_week: 2, status: 'Active' },
 ];
 
 export default function TeamPage() {

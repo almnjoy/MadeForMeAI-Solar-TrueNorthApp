@@ -183,6 +183,58 @@ export async function getTasks(first = 20) {
   return data.tasks.edges.map(e => e.node);
 }
 
+// ── Lead Creation (website intake → CRM) ─────────────────────────────────────
+
+// Creates a Person + Opportunity in Twenty CRM from a quote form submission.
+// Returns { person, opportunity } or throws on failure.
+export async function createLead({ firstName, lastName, email, phone, province, monthlyBill, notes }) {
+  // Step 1: create the contact (Person)
+  const personData = await gql(`
+    mutation CreatePerson($data: PersonCreateInput!) {
+      createPerson(data: $data) {
+        id
+        name { firstName lastName }
+      }
+    }
+  `, {
+    data: {
+      name: { firstName, lastName },
+      emails: { primaryEmail: email },
+      phones: { primaryPhoneNumber: phone },
+      city: province,
+    },
+  });
+
+  const person = personData.createPerson;
+
+  // Step 2: create the opportunity linked to this person
+  const oppName = `Solar Quote — ${firstName} ${lastName}`;
+  const oppBody = [
+    `Province: ${province}`,
+    `Monthly Bill: $${monthlyBill}`,
+    notes ? `Notes: ${notes}` : null,
+  ].filter(Boolean).join('\n');
+
+  const oppData = await gql(`
+    mutation CreateOpportunity($data: OpportunityCreateInput!) {
+      createOpportunity(data: $data) {
+        id
+        name
+        stage
+      }
+    }
+  `, {
+    data: {
+      name: oppName,
+      stage: 'NEW',
+      pointOfContactId: person.id,
+      body: oppBody,
+    },
+  });
+
+  return { person, opportunity: oppData.createOpportunity };
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 // Convert Twenty amountMicros to dollars

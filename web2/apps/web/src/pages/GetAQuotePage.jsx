@@ -8,18 +8,59 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { CheckCircle, Phone, FileText } from 'lucide-react';
+import { createLead, isConfigured } from '@/lib/twentyClient.js';
+
+const EMPTY_FORM = {
+  name: '',
+  phone: '',
+  email: '',
+  province: '',
+  bill: '',
+  message: '',
+};
 
 export default function GetAQuotePage() {
+  const [form, setForm] = useState(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const set = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      toast.success("Quote request received. We'll be in touch shortly.");
+
+    try {
+      if (isConfigured()) {
+        // Split name into first/last — take first word as first name, rest as last
+        const [firstName, ...rest] = form.name.trim().split(/\s+/);
+        const lastName = rest.join(' ') || '-';
+
+        await createLead({
+          firstName,
+          lastName,
+          email: form.email,
+          phone: form.phone,
+          province: form.province,
+          monthlyBill: form.bill,
+          notes: form.message,
+        });
+      } else {
+        // CRM not configured — still show success (dev/preview mode)
+        await new Promise(r => setTimeout(r, 1200));
+      }
+
+      toast.success("Quote request received! We'll be in touch shortly.", {
+        description: 'Your lead has been added to our pipeline.',
+      });
+      setForm(EMPTY_FORM);
+    } catch (err) {
+      console.error('createLead failed:', err);
+      toast.error('Something went wrong submitting your request.', {
+        description: 'Please try again or contact us directly.',
+      });
+    } finally {
       setIsSubmitting(false);
-      e.target.reset();
-    }, 1500);
+    }
   };
 
   return (
@@ -42,23 +83,50 @@ export default function GetAQuotePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" required placeholder="Maya Chen" className="h-12 text-foreground" />
+                  <Input
+                    id="name"
+                    required
+                    placeholder="Maya Chen"
+                    className="h-12 text-foreground"
+                    value={form.name}
+                    onChange={set('name')}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" required placeholder="(555) 123-4567" className="h-12 text-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    required
+                    placeholder="(555) 123-4567"
+                    className="h-12 text-foreground"
+                    value={form.phone}
+                    onChange={set('phone')}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" required placeholder="maya@example.com" className="h-12 text-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  placeholder="maya@example.com"
+                  className="h-12 text-foreground"
+                  value={form.email}
+                  onChange={set('email')}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="province">Province</Label>
-                  <Select required>
+                  <Select
+                    required
+                    value={form.province}
+                    onValueChange={(val) => setForm(prev => ({ ...prev, province: val }))}
+                  >
                     <SelectTrigger className="h-12 text-foreground">
                       <SelectValue placeholder="Select province" />
                     </SelectTrigger>
@@ -72,17 +140,31 @@ export default function GetAQuotePage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bill">Monthly Bill ($)</Label>
-                  <Input id="bill" type="number" required placeholder="150" className="h-12 text-foreground" />
+                  <Input
+                    id="bill"
+                    type="number"
+                    required
+                    placeholder="150"
+                    className="h-12 text-foreground"
+                    value={form.bill}
+                    onChange={set('bill')}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="message">Additional Details</Label>
-                <Textarea id="message" placeholder="Tell us about your roof, energy goals, etc." className="min-h-[120px] text-foreground" />
+                <Textarea
+                  id="message"
+                  placeholder="Tell us about your roof, energy goals, etc."
+                  className="min-h-[120px] text-foreground"
+                  value={form.message}
+                  onChange={set('message')}
+                />
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isSubmitting}
                 className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground"
               >
@@ -95,8 +177,8 @@ export default function GetAQuotePage() {
         {/* Right Side - Info & Image */}
         <div className="flex-1 bg-muted relative hidden lg:flex flex-col">
           <div className="absolute inset-0 z-0">
-            <img 
-              src="https://images.unsplash.com/photo-1692578919818-8418a9390759" 
+            <img
+              src="https://images.unsplash.com/photo-1692578919818-8418a9390759"
               alt="Modern home with solar panels"
               className="w-full h-full object-cover opacity-20"
             />
@@ -104,7 +186,7 @@ export default function GetAQuotePage() {
           <div className="relative z-10 p-20 flex flex-col justify-center h-full">
             <div className="bg-background/90 backdrop-blur-md p-10 rounded-3xl shadow-xl max-w-lg">
               <h2 className="text-3xl font-bold mb-8">What Happens Next?</h2>
-              
+
               <div className="space-y-8">
                 <div className="flex gap-4">
                   <div className="p-3 bg-primary/10 rounded-xl h-fit">
@@ -115,7 +197,7 @@ export default function GetAQuotePage() {
                     <p className="text-muted-foreground">Our team analyzes your energy needs and property details.</p>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4">
                   <div className="p-3 bg-primary/10 rounded-xl h-fit">
                     <Phone className="w-6 h-6 text-primary" />
@@ -125,7 +207,7 @@ export default function GetAQuotePage() {
                     <p className="text-muted-foreground">A solar expert reaches out to discuss your goals and answer questions.</p>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4">
                   <div className="p-3 bg-primary/10 rounded-xl h-fit">
                     <FileText className="w-6 h-6 text-primary" />

@@ -28,6 +28,7 @@ import PipelinePage from '@/pages/PipelinePage.jsx';
 import TeamPage from '@/pages/TeamPage.jsx';
 import AccountPage from '@/pages/AccountPage.jsx';
 import AgentBrainPage from '@/pages/AgentBrainPage.jsx';
+import ResourcesPage from '@/pages/ResourcesPage.jsx';
 
 function PublicLayout({ children }) {
   return (
@@ -90,6 +91,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout><AccountPage /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resources"
+            element={
+              <ProtectedRoute>
+                <Layout><ResourcesPage /></Layout>
               </ProtectedRoute>
             }
           />

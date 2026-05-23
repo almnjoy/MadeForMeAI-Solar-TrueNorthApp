@@ -108,3 +108,35 @@ spec:
       - X-authentik-meta-provider
       - X-authentik-meta-app
       - X-authentik-meta-version
+
+---
+## ── TrueNorth Outpost Callback IngressRoute ──────────────────────────────────
+# Priority 100 explicit Host() rules beat the global HostRegexp wildcard in the
+# traefik namespace, routing /outpost.goauthentik.io/ to the TrueNorth outpost
+# (not the main outpost) for both protected TrueNorth subdomains.
+# Applied live 2026-05-22 — now committed to git.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: truenorth-outpost-callback
+  namespace: traefik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: "Host(`hermes-truenorth.madeformeai.com`) && PathPrefix(`/outpost.goauthentik.io/`)"
+      priority: 100
+      services:
+        - name: truenorth-authentik-proxy
+          namespace: truenorth-demo
+          port: 9000
+    - kind: Rule
+      match: "Host(`truenorth-openclaw.madeformeai.com`) && PathPrefix(`/outpost.goauthentik.io/`)"
+      priority: 100
+      services:
+        - name: truenorth-authentik-proxy
+          namespace: truenorth-demo
+          port: 9000
+  tls:
+    secretName: madeformeai-wildcard-tls

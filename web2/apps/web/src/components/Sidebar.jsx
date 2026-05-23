@@ -10,7 +10,8 @@ import {
   Lock,
   LogOut,
   Menu,
-  X
+  X,
+  BookOpen,
 } from 'lucide-react';
 import TrueNorthLogo from '@/components/TrueNorthLogo.jsx';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ export default function Sidebar() {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Pipeline', path: '/pipeline', icon: KanbanSquare },
     { name: 'Team', path: '/team', icon: Users },
+    { name: 'Resources', path: '/resources', icon: BookOpen },
     { name: 'Account', path: '/account', icon: Settings },
   ];
 
