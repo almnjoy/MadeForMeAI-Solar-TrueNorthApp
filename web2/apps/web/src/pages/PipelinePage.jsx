@@ -163,4 +163,46 @@ export default function PipelinePage() {
                     <GripVertical className="w-3.5 h-3.5" />
                   </div>
 
-                 
+                  <h4 className="font-semibold text-sm text-foreground mb-0.5 pr-5">{lead.name}</h4>
+
+                  {lead.company && (
+                    <p className="text-xs text-muted-foreground mb-2">{lead.company}</p>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
+                    <span className="font-semibold text-foreground">
+                      {lead.amount > 0 ? `$${lead.amount.toLocaleString()}` : '—'}
+                    </span>
+                    {saving === lead.id && (
+                      <span className="text-primary text-[10px]">Saving…</span>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+
+              {draggedLead && draggedLead.status !== column && (
+                <div className="h-20 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5" />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Mock data ─────────────────────────────────────────────────────────────────
+const MOCK_LEADS = [
+  { id: '1',  name: 'James Okafor',   status: 'New Lead',           company: 'Okafor Homes',   amount: 12000 },
+  { id: '2',  name: 'Maria Santos',   status: 'Contacted',          company: '',               amount: 15000 },
+  { id: '3',  name: 'David Chen',     status: 'Contacted',          company: 'Chen Solar',     amount: 9000  },
+  { id: '4',  name: 'Rachel Kim',     status: 'Proposal Sent',      company: '',               amount: 18000 },
+  { id: '5',  name: 'Tom Bergman',    status: 'Won',                company: 'Bergman Group',  amount: 22000 },
+  { id: '6',  name: 'Aisha Patel',    status: 'New Lead',           company: '',               amount: 11000 },
+  { id: '7',  name: 'Luis Fernandez', status: 'Won',                company: 'LF Properties',  amount: 19000 },
+  { id: '8',  name: 'Jenny Larsen',   status: 'Proposal Sent',      company: '',               amount: 14000 },
+  { id: '9',  name: 'Preet Johal',    status: 'Site Survey Booked', company: 'Johal Dev',      amount: 16000 },
+  { id: '10', name: 'Tyler Moss',     status: 'New Lead',           company: '',               amount: 8000  },
+  { id: '11', name: 'Sandra Ho',      status: 'Lost',               company: '',               amount: 10000 },
+  { id: '12', name: 'Raj Mehta',      status: 'Site Survey Booked', company: 'Mehta Builders', amount: 13000 },
+];

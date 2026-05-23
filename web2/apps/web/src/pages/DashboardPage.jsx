@@ -197,4 +197,39 @@ export default function DashboardPage() {
       <Card className="border-border shadow-sm bg-gradient-to-r from-card to-muted/30">
         <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-6">
           <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Active AI Agents</span>
-          <div classN
+          <div className="flex flex-wrap gap-4">
+            {['Solar Doc', 'Solar Support', 'Solar Sales'].map(agent => (
+              <div key={agent} className="flex items-center gap-2 bg-white dark:bg-card px-3 py-1.5 rounded-full border border-border shadow-sm">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                </span>
+                <span className="text-sm font-medium">{agent}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Mock data (used when API key not set) ─────────────────────────────────────
+const MOCK_OPPS = [
+  { id: '1', name: 'James Okafor',   stage: 'NEW',       amount: { amountMicros: 12000_000000 }, createdAt: new Date().toISOString() },
+  { id: '2', name: 'Maria Santos',   stage: 'SCREENING', amount: { amountMicros: 15000_000000 }, createdAt: new Date().toISOString() },
+  { id: '3', name: 'David Chen',     stage: 'SCREENING', amount: { amountMicros: 9000_000000  }, createdAt: new Date().toISOString() },
+  { id: '4', name: 'Rachel Kim',     stage: 'PROPOSAL',  amount: { amountMicros: 18000_000000 }, createdAt: new Date().toISOString() },
+  { id: '5', name: 'Tom Bergman',    stage: 'CUSTOMER',  amount: { amountMicros: 22000_000000 }, createdAt: new Date().toISOString() },
+  { id: '6', name: 'Aisha Patel',    stage: 'NEW',       amount: { amountMicros: 11000_000000 }, createdAt: new Date().toISOString() },
+  { id: '7', name: 'Luis Fernandez', stage: 'CUSTOMER',  amount: { amountMicros: 19000_000000 }, createdAt: new Date().toISOString() },
+];
+
+const now = Date.now();
+const MOCK_NOTES = [
+  { id: '1', title: 'Lead Qualified',  body: 'AI agent qualified Rachel Kim — $420/mo bill',     createdAt: new Date(now - 1000*60*18).toISOString(),    author: { name: { firstName: 'Solar', lastName: 'AI' } } },
+  { id: '2', title: 'Follow-Up Sent', body: 'Automated follow-up sent to Maria Santos',           createdAt: new Date(now - 1000*60*45).toISOString(),    author: { name: { firstName: 'Solar', lastName: 'AI' } } },
+  { id: '3', title: 'Deal Won',       body: 'Tom Bergman moved to Won — system size 8.4 kW',     createdAt: new Date(now - 1000*60*60*2).toISOString(),  author: { name: { firstName: 'Sarah', lastName: 'M.' } } },
+  { id: '4', title: 'New Lead',       body: 'Aisha Patel submitted quote request via web form',  createdAt: new Date(now - 1000*60*60*4).toISOString(),  author: { name: { firstName: 'Solar', lastName: 'AI' } } },
+  { id: '5', title: 'Deal Won',       body: 'Luis Fernandez signed — financing approved',        createdAt: new Date(now - 1000*60*60*6).toISOString(),  author: { name: { firstName: 'Carlos', lastName: 'D.' } } },
+];

@@ -65,4 +65,10 @@ export default function CallbackPage() {
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
           <h2 className="text-xl font-semibold mt-2 text-foreground">Completing sign in</h2>
           <p className="text-sm text-muted-foreground">
-            Please wait whil
+            Please wait while we verify your credentials and log you in.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}

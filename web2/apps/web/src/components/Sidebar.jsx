@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import {
   LayoutDashboard,
   KanbanSquare,
-  Bot,
   Users,
   Settings,
   Lock,
@@ -27,7 +26,6 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Pipeline', path: '/pipeline', icon: KanbanSquare },
-    { name: 'AI Agents', path: '/ai-agents', icon: Bot },
     { name: 'Team', path: '/team', icon: Users },
     { name: 'Account', path: '/account', icon: Settings },
   ];

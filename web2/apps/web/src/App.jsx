@@ -14,7 +14,6 @@ import ScrollToTop from '@/components/ScrollToTop.jsx';
 import HomePage from '@/pages/HomePage.jsx';
 import HowItWorksPage from '@/pages/HowItWorksPage.jsx';
 import Solar101Page from '@/pages/Solar101Page.jsx';
-import AIAgentsPage from '@/pages/AIAgentsPage.jsx';
 import GetAQuotePage from '@/pages/GetAQuotePage.jsx';
 import ContactPage from '@/pages/ContactPage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
@@ -53,7 +52,6 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/how-it-works" element={<PublicLayout><HowItWorksPage /></PublicLayout>} />
           <Route path="/solar-101" element={<PublicLayout><Solar101Page /></PublicLayout>} />
-          <Route path="/ai-agents" element={<PublicLayout><AIAgentsPage /></PublicLayout>} />
           <Route path="/get-quote" element={<PublicLayout><GetAQuotePage /></PublicLayout>} />
           <Route path="/get-a-quote" element={<PublicLayout><GetAQuotePage /></PublicLayout>} />
           <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
