@@ -105,6 +105,8 @@ spec:
         app: truenorth-hermes
         project: truenorth-demo
     spec:
+      securityContext:
+        runAsUser: 0
       containers:
         - name: hermes
           image: nousresearch/hermes-agent:latest
