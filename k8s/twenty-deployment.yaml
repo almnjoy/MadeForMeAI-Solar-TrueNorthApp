@@ -34,30 +34,6 @@ spec:
         app: truenorth-twenty
         project: truenorth-demo
     spec:
-      initContainers:
-        - name: twenty-migrate
-          image: twentycrm/twenty:latest
-          command: ["node", "dist/src/database/commands/migrate-prod.js"]
-          env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: DATABASE_URL
-            - name: REDIS_URL
-              value: "redis://truenorth-redis.truenorth-demo.svc.cluster.local:6379"
-            - name: APP_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: TWENTY_APP_SECRET
-            - name: SERVER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: truenorth-env
-                  key: TWENTY_SERVER_URL
-            - name: NODE_ENV
-              value: "production"
       containers:
         - name: twenty
           image: twentycrm/twenty:latest
