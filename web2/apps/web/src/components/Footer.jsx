@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 
 function Footer() {
   return (
@@ -11,10 +11,7 @@ function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                <Sun className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">TrueNorth Solar</span>
+              <img src="/truenorth-logo.svg" alt="TrueNorth Solar" className="h-10 w-auto" />
             </div>
             <p className="text-sm leading-relaxed">
               Leading the way in sustainable energy solutions for homes and businesses across the nation.
@@ -31,18 +28,18 @@ function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-sm hover:text-white transition-colors duration-200">
-                  About Us
+                <Link to="/how-it-works" className="text-sm hover:text-white transition-colors duration-200">
+                  How It Works
                 </Link>
               </li>
               <li>
-                <Link to="/services" className="text-sm hover:text-white transition-colors duration-200">
-                  Services
+                <Link to="/ai-agents" className="text-sm hover:text-white transition-colors duration-200">
+                  AI Agents
                 </Link>
               </li>
               <li>
-                <Link to="/signup" className="text-sm hover:text-white transition-colors duration-200">
-                  Get Started
+                <Link to="/get-quote" className="text-sm hover:text-white transition-colors duration-200">
+                  Get a Quote
                 </Link>
               </li>
             </ul>

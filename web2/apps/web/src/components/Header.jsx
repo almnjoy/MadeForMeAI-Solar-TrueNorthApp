@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function Header() {
@@ -10,9 +10,10 @@ function Header() {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'About', path: '/about' },
-    { name: 'Services', path: '/services' },
-    { name: 'Signup', path: '/signup' },
+    { name: 'How It Works', path: '/how-it-works' },
+    { name: 'Solar 101', path: '/solar-101' },
+    { name: 'AI Agents', path: '/ai-agents' },
+    { name: 'Get a Quote', path: '/get-quote' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -23,10 +24,11 @@ function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-              <Sun className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">TrueNorth Solar</span>
+            <img
+              src="/truenorth-logo.svg"
+              alt="TrueNorth Solar"
+              className="h-10 w-auto transition-transform duration-200 group-hover:scale-105"
+            />
           </Link>
 
           {/* Desktop Navigation */}
