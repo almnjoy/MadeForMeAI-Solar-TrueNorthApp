@@ -1,0 +1,109 @@
+## ── TrueNorth Authentik Outpost ──────────────────────────────────────────────
+# Proxy outpost for truenorth-login.madeformeai.com branding.
+# Token stored in truenorth-env secret (AUTHENTIK_OUTPOST_TOKEN).
+# Exposes port 9000 as a ClusterIP service, referenced by the Traefik middleware.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truenorth-authentik-proxy
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-authentik-proxy
+    project: truenorth-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truenorth-authentik-proxy
+  template:
+    metadata:
+      labels:
+        app: truenorth-authentik-proxy
+        project: truenorth-demo
+    spec:
+      containers:
+        - name: proxy
+          image: ghcr.io/goauthentik/proxy:2026.2.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+              name: http
+            - containerPort: 9443
+              name: https
+          env:
+            - name: AUTHENTIK_HOST
+              value: "https://identity.madeformeai.com"
+            - name: AUTHENTIK_INSECURE
+              value: "false"
+            - name: AUTHENTIK_HOST_BROWSER
+              value: "https://truenorth-login.madeformeai.com"
+            - name: AUTHENTIK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: AUTHENTIK_OUTPOST_TOKEN
+          readinessProbe:
+            httpGet:
+              path: /outpost.goauthentik.io/ping
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /outpost.goauthentik.io/ping
+              port: 9000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+---
+## ── TrueNorth Outpost Service ─────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: truenorth-authentik-proxy
+  namespace: truenorth-demo
+  labels:
+    app: truenorth-authentik-proxy
+    project: truenorth-demo
+spec:
+  selector:
+    app: truenorth-authentik-proxy
+  ports:
+    - name: http
+      port: 9000
+      targetPort: 9000
+
+---
+## ── Traefik Forward Auth Middleware ──────────────────────────────────────────
+# Named truenorth-authentik-forwardauth — referenced in ingress annotations as:
+# traefik.ingress.kubernetes.io/router.middlewares: truenorth-demo-truenorth-authentik-forwardauth@kubernetescrd
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: truenorth-authentik-forwardauth
+  namespace: truenorth-demo
+spec:
+  forwardAuth:
+    address: http://truenorth-authentik-proxy.truenorth-demo.svc.cluster.local:9000/outpost.goauthentik.io/auth/traefik
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-authentik-username
+      - X-authentik-groups
+      - X-authentik-email
+      - X-authentik-name
+      - X-authentik-uid
+      - X-authentik-jwt
+      - X-authentik-meta-jwks
+      - X-authentik-meta-outpost
+      - X-authentik-meta-provider
+      - X-authentik-meta-app
+      - X-authentik-meta-version
