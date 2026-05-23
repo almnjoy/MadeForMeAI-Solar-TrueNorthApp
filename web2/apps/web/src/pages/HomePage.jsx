@@ -129,21 +129,18 @@ export default function HomePage() {
               emoji="📚"
               name="Doc Agent"
               description="Get instant answers to technical questions about solar panels, installation, and maintenance."
-              discordLink="#"
               delay={0.1}
             />
             <AgentCard
               emoji="🛠️"
               name="Support Agent"
               description="Troubleshoot issues, schedule service, and get help with your existing solar system."
-              discordLink="#"
               delay={0.2}
             />
             <AgentCard
               emoji="💼"
               name="Sales Agent"
               description="Explore pricing, financing options, and get personalized quotes for your home."
-              discordLink="#"
               delay={0.3}
             />
           </div>

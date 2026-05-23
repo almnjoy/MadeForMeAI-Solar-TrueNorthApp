@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, ExternalLink, MessageCircle, Github, Mail, Smartphone } from 'lucide-react';
+import { BookOpen, ExternalLink, MessageCircle, Mail, Smartphone } from 'lucide-react';
 
 const RESOURCES = [
   {
     title: 'Discord Community',
     description: 'Connect with the team, get support, and interact with TrueNorth AI agents directly in Discord.',
-    url: 'https://discord.gg/truenorth',
+    url: 'https://discord.gg/GTVDsPya',
     icon: MessageCircle,
     accent: 'border-t-[#5865F2]',
     iconColor: 'text-[#5865F2]',
@@ -22,16 +22,6 @@ const RESOURCES = [
     accent: 'border-t-primary',
     iconColor: 'text-primary',
     badge: 'Docs',
-    active: true,
-  },
-  {
-    title: 'GitHub',
-    description: 'Source repos for the TrueNorth platform — frontend, K8s configs, and agent definitions.',
-    url: 'https://github.com/almnjoy',
-    icon: Github,
-    accent: 'border-t-foreground',
-    iconColor: 'text-foreground',
-    badge: 'Code',
     active: true,
   },
   {
