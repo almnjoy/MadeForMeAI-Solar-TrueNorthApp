@@ -72,6 +72,26 @@ spec:
               value: "/app/packages/twenty-server/.local-storage"
             - name: MESSAGE_QUEUE_TYPE
               value: "bull-mq"
+            # psql env vars — used by Twenty's startup health check script
+            - name: PGHOST
+              value: "truenorth-postgres.truenorth-demo.svc.cluster.local"
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: POSTGRES_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: POSTGRES_PASSWORD
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: truenorth-env
+                  key: POSTGRES_DB
           volumeMounts:
             - name: twenty-storage
               mountPath: /app/packages/twenty-server/.local-storage
