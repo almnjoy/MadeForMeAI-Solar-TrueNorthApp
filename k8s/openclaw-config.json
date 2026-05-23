@@ -3,6 +3,7 @@
     "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
   },
   "gateway": {
+    "mode": "local",
     "bind": "lan",
     "trustedProxies": [
       "10.0.0.0/8",
@@ -80,28 +81,35 @@
     "list": [
       {
         "id": "main",
-        "name": "TrueNorth Solar AI",
         "workspace": "/home/node/.openclaw/workspace",
         "identity": {
-          "name": "TrueNorth Solar AI",
           "avatar": "assets/clouds.png"
         },
         "thinkingDefault": "low"
       },
       {
-        "id": "solar-sales",
-        "name": "Solar Sales Assistant",
-        "workspace": "/home/node/.openclaw/workspace-sales",
-        "agentDir": "/home/node/.openclaw/agents/solar-sales/agent",
+        "id": "setup",
+        "name": "MadeForMeAI Setup Assistant",
+        "workspace": "/home/node/.openclaw/workspace-setup",
+        "agentDir": "/home/node/.openclaw/agents/setup/agent",
         "model": {
-          "primary": "openrouter/moonshotai/kimi-k2"
+          "primary": "openrouter/anthropic/claude-haiku-4-5"
         },
         "identity": {
-          "name": "Solar Sales Assistant",
+          "name": "MadeForMeAI Setup Assistant",
           "avatar": "assets/computer.png"
         },
-        "thinkingDefault": "low",
-        "fastModeDefault": false
+        "thinkingDefault": "off",
+        "fastModeDefault": true,
+        "skills": [
+          "setup-protocol",
+          "config-write",
+          "plugin-install",
+          "telegram-setup",
+          "whatsapp-setup",
+          "discord-setup",
+          "elevenlabs-setup"
+        ]
       }
     ]
   },
