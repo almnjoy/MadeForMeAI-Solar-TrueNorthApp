@@ -51,6 +51,7 @@ data:
         "controlUi": {
           "allowedOrigins": [
             "https://truenorth.madeformeai.com",
+            "https://openclaw-truenorth.madeformeai.com",
             "https://truenorth-openclaw.madeformeai.com",
             "https://chat.madeformeai.com"
           ],
@@ -218,6 +219,24 @@ spec:
         app: truenorth-openclaw
         project: truenorth-demo
     spec:
+      initContainers:
+        - name: seed-config
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /data/openclaw.json ]; then
+                cp /config/openclaw.json /data/openclaw.json
+                echo "Seeded openclaw.json"
+              else
+                echo "openclaw.json already exists, skipping seed"
+              fi
+          volumeMounts:
+            - name: openclaw-data
+              mountPath: /data
+            - name: openclaw-config
+              mountPath: /config
       containers:
         - name: openclaw
           image: ghcr.io/openclaw/openclaw:2026.5.20
@@ -232,9 +251,6 @@ spec:
           volumeMounts:
             - name: openclaw-data
               mountPath: /home/node/.openclaw
-            - name: openclaw-config
-              mountPath: /home/node/.openclaw/openclaw.json
-              subPath: openclaw.json
           resources:
             requests:
               cpu: 100m
