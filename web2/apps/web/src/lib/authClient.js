@@ -42,7 +42,7 @@ export async function initiateLogin() {
     state,
   });
 
-  window.location.href = `${AUTHENTIK_URL}/application/o/${APP_SLUG}/authorize/?${params}`;
+  window.location.href = `${AUTHENTIK_URL}/application/o/authorize/?${params}`;
 }
 
 export async function exchangeCode(code, state) {
