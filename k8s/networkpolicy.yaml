@@ -1,0 +1,65 @@
+## ── OPTIONAL hardening — apply deliberately, not as part of routine deploy ────
+#
+# Restricts the admin-gated agent services (openclaw, hermes) so they are only
+# reachable from the Traefik namespace, where Authentik ForwardAuth actually
+# enforces auth. Without this, anything in-cluster (or a stray port-forward) can
+# hit these services directly and bypass Authentik.
+#
+# WHY THIS IS OPTIONAL / APPLY WITH CARE:
+#   - These pods expose their probe ports (openclaw 18789, hermes 8642) on the
+#     same port the public reaches. Some CNIs route kubelet liveness/readiness
+#     probes through the pod network and a NetworkPolicy can block them, which
+#     would crash-loop the pod. K3s default (kube-router) generally allows local
+#     node->pod probe traffic, but VERIFY after applying:
+#         kubectl get pods -n truenorth-demo -w
+#     If openclaw/hermes go NotReady right after applying, delete this policy:
+#         kubectl delete -f k8s/networkpolicy.yaml
+#   - Requires the traefik namespace to carry the standard label
+#     kubernetes.io/metadata.name: traefik (auto-applied on K8s 1.21+).
+#
+# This file is intentionally NOT in the DEPLOY.md apply list. Apply it on its own
+# once you have confirmed the cluster's CNI does not block probes.
+# -----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: openclaw-traefik-only
+  namespace: truenorth-demo
+spec:
+  podSelector:
+    matchLabels:
+      app: truenorth-openclaw
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 18789
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hermes-traefik-only
+  namespace: truenorth-demo
+spec:
+  podSelector:
+    matchLabels:
+      app: truenorth-hermes
+  policyTypes:
+    - Ingress
+  ingress:
+    # Dashboard (9119) and API (8642) both reach the pod through Traefik.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - protocol: TCP
+          port: 8642
+        - protocol: TCP
+          port: 9119

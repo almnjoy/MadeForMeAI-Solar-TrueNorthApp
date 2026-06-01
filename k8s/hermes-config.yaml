@@ -1,6 +1,12 @@
-# TrueNorth Solar — Hermes Agent config.yaml
-# Adapted from production template. Mounted at /opt/data/config.yaml via ConfigMap.
-# OPENROUTER_API_KEY is injected as env var — Hermes auto-registers it in credential pool.
+# TrueNorth Solar — Hermes Agent config.yaml  (REFERENCE / FULL CONFIG)
+#
+# NOT applied directly. The authoritative config that actually ships is the
+# embedded ConfigMap in hermes-deployment.yaml (mounted at /opt/data/config.yaml
+# via subPath). This file is the richer reference set — if you want any of the
+# extra sections below (terminal, web, sessions, curator, tirith) live, copy them
+# into that ConfigMap and restart the pod. Keep model/provider in sync:
+#   model.default: moonshotai/kimi-k2, provider: openrouter.
+# OPENROUTER_API_KEY is injected as env var — Hermes auto-registers it.
 
 model:
   default: moonshotai/kimi-k2

@@ -12,9 +12,9 @@ metadata:
 data:
   config.yaml: |
     model:
-      default: openai/gpt-5.5
-      provider: openai-codex
-      base_url: ''
+      default: moonshotai/kimi-k2
+      provider: openrouter
+      base_url: https://openrouter.ai/api/v1
       api_mode: chat_completions
     providers: {}
     fallback_providers: []
@@ -151,6 +151,14 @@ spec:
           volumeMounts:
             - name: hermes-data
               mountPath: /opt/data
+            # Mount the ConfigMap's config.yaml as a single file (subPath) so it
+            # lands at /opt/data/config.yaml without masking the rest of the PVC.
+            # Was previously declared as a volume but never mounted — the agent
+            # ran on defaults. subPath is seeded at start, so editing the
+            # ConfigMap requires a pod restart to take effect.
+            - name: hermes-config
+              mountPath: /opt/data/config.yaml
+              subPath: config.yaml
           resources:
             requests:
               cpu: 200m

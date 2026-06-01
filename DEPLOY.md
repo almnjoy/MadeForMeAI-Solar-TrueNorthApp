@@ -33,21 +33,58 @@ docker push ghcr.io/almnjoy/truenorth-frontend:latest
 
 Run from `MARKETING/SOLAR-DEMO/`:
 
+Apply files individually, never `kubectl apply -f k8s/` the whole directory — one
+file (`truenorth-outpost.yaml`) writes into the shared `traefik` namespace and a
+blanket apply there is what takes down Authentik for every app.
+
 ```bash
 # 1. Namespace
 kubectl apply -f k8s/namespace.yaml
 
-# 2. Secrets (only safe to re-apply — no destructive changes)
+# 2. Secrets (fill in real values first; only safe to re-apply — no destructive changes)
 kubectl apply -f k8s/secrets.yaml -n truenorth-demo
 
-# 3. Postgres (PVC + Deployment + Service)
+# 3. Data stores
 kubectl apply -f k8s/postgres-deployment.yaml
+kubectl apply -f k8s/redis-deployment.yaml
 
-# 4. Frontend (Deployment + Service)
+# 4. App workloads
+kubectl apply -f k8s/twenty-deployment.yaml
+kubectl apply -f k8s/hermes-deployment.yaml
+kubectl apply -f k8s/openclaw-deployment.yaml
+
+# 5. Frontend (Deployment + Service) + its ingress
 kubectl apply -f k8s/frontend-deployment.yaml
-
-# 5. Ingress (Traefik + TLS)
 kubectl apply -f k8s/frontend-ingress.yaml
+```
+
+### Step 2b — Authentik outpost (SHARED traefik namespace — deliberate, separate step)
+
+`truenorth-outpost.yaml` creates a Middleware and an IngressRoute in the **traefik**
+namespace, shared with the main platform. Review the diff before applying and never
+delete/blanket-reapply it casually — a mistake here breaks auth cluster-wide.
+
+```bash
+# Confirm the wildcard TLS secret the outpost IngressRoute references exists here:
+kubectl get secret madeformeai-wildcard-tls -n traefik
+
+# Then apply, on its own:
+kubectl apply -f k8s/truenorth-outpost.yaml
+```
+
+If `madeformeai-wildcard-tls` is NOT present in the traefik namespace, either copy it
+there or drop `tls.secretName` from the IngressRoute and rely on Traefik's default
+TLSStore (the pattern the user-pod ingresses use). A missing secret silently breaks
+TLS on the callback path and looks exactly like "Authentik is down."
+
+### Step 2c — Optional: NetworkPolicy hardening
+
+See the caveats in `k8s/networkpolicy.yaml`. Apply on its own and verify pods stay
+Ready (some CNIs block kubelet probes):
+
+```bash
+kubectl apply -f k8s/networkpolicy.yaml
+kubectl get pods -n truenorth-demo -w
 ```
 
 ---

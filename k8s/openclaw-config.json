@@ -25,7 +25,9 @@
     "controlUi": {
       "allowedOrigins": [
         "https://truenorth.madeformeai.com",
-        "https://truenorth-openclaw.madeformeai.com"
+        "https://openclaw-truenorth.madeformeai.com",
+        "https://truenorth-openclaw.madeformeai.com",
+        "https://chat.madeformeai.com"
       ],
       "allowInsecureAuth": true,
       "dangerouslyDisableDeviceAuth": true
@@ -35,7 +37,7 @@
     "defaults": {
       "skipBootstrap": true,
       "model": {
-        "primary": "openrouter/anthropic/claude-sonnet-4-6"
+        "primary": "openrouter/moonshotai/kimi-k2"
       },
       "agentRuntime": {
         "id": "auto"
@@ -44,91 +46,71 @@
         "mode": "safeguard"
       },
       "heartbeat": {
-        "every": "4h",
+        "every": "2h",
         "target": "none",
         "isolatedSession": true,
         "lightContext": true,
         "skipWhenBusy": true,
         "activeHours": {
-          "start": "07:00",
-          "end": "22:00"
+          "start": "09:00",
+          "end": "21:00"
         }
       },
       "models": {
-        "openrouter/anthropic/claude-sonnet-4-6": {
-          "alias": "💎 Claude Sonnet (Recommended)"
+        "openrouter/moonshotai/kimi-k2": {
+          "alias": "⭐ Smart Assistant (Recommended)"
+        },
+        "openrouter/google/gemini-3.1-flash-lite-preview": {
+          "alias": "⚡ Quick Answers"
+        },
+        "openrouter/x-ai/grok-4.3": {
+          "alias": "🧠 Logic & Reasoning"
         },
         "openrouter/anthropic/claude-haiku-4-5": {
-          "alias": "⚡ Claude Haiku (Fast)"
+          "alias": "💻 Coding Helper"
         },
-        "openrouter/moonshotai/kimi-k2": {
-          "alias": "⭐ Kimi K2"
+        "openrouter/moonshotai/kimi-k2.6": {
+          "alias": "🔬 Deep Research"
         },
-        "openrouter/google/gemini-2.5-flash": {
-          "alias": "🔬 Gemini Flash"
+        "openrouter/anthropic/claude-sonnet-4-6": {
+          "alias": "💎 Premium Claude"
+        },
+        "openrouter/deepseek/deepseek-v4-flash": {
+          "alias": "💸 Ultra Cheap"
         }
       }
     },
     "list": [
       {
-        "id": "solar-doc",
-        "name": "📚 Doc Agent",
-        "workspace": "/home/node/.openclaw/workspace-doc",
-        "agentDir": "/workspace/agents/truenorth-doc",
+        "id": "main",
+        "workspace": "/home/node/.openclaw/workspace",
+        "identity": {
+          "avatar": "assets/clouds.png"
+        },
+        "thinkingDefault": "low"
+      },
+      {
+        "id": "setup",
+        "name": "MadeForMeAI Setup Assistant",
+        "workspace": "/home/node/.openclaw/workspace-setup",
+        "agentDir": "/home/node/.openclaw/agents/setup/agent",
         "model": {
           "primary": "openrouter/anthropic/claude-haiku-4-5"
         },
         "identity": {
-          "name": "TrueNorth Doc Agent",
-          "description": "Technical questions about solar panels, installation, and system specs.",
-          "avatar": "assets/book.png"
+          "name": "MadeForMeAI Setup Assistant",
+          "avatar": "assets/computer.png"
         },
         "thinkingDefault": "off",
         "fastModeDefault": true,
         "skills": [
-          "read-runbook",
-          "web-fetch"
-        ]
-      },
-      {
-        "id": "solar-support",
-        "name": "🛠️ Support Agent",
-        "workspace": "/home/node/.openclaw/workspace-support",
-        "agentDir": "/workspace/agents/truenorth-support",
-        "model": {
-          "primary": "openrouter/anthropic/claude-sonnet-4-6"
-        },
-        "identity": {
-          "name": "TrueNorth Support Agent",
-          "description": "Help with existing solar systems — troubleshooting, warranties, and service.",
-          "avatar": "assets/wrench.png"
-        },
-        "thinkingDefault": "low",
-        "fastModeDefault": false,
-        "skills": [
-          "read-runbook",
-          "web-fetch"
-        ]
-      },
-      {
-        "id": "solar-sales",
-        "name": "💼 Sales Agent",
-        "workspace": "/home/node/.openclaw/workspace-sales",
-        "agentDir": "/workspace/agents/truenorth-sales",
-        "model": {
-          "primary": "openrouter/anthropic/claude-sonnet-4-6"
-        },
-        "identity": {
-          "name": "TrueNorth Sales Agent",
-          "description": "Explore solar pricing, financing, and get a personalized quote for your home.",
-          "avatar": "assets/chart.png"
-        },
-        "thinkingDefault": "low",
-        "fastModeDefault": false,
-        "skills": [
-          "read-runbook",
-          "web-fetch",
-          "crm-create-lead"
+          "setup-protocol",
+          "config-write",
+          "plugin-install",
+          "telegram-setup",
+          "whatsapp-setup",
+          "discord-setup",
+          "elevenlabs-setup"
         ]
       }
     ]
@@ -137,7 +119,7 @@
     "reset": {
       "mode": "daily",
       "atHour": 4,
-      "idleMinutes": 120
+      "idleMinutes": 240
     }
   },
   "tools": {
@@ -169,6 +151,13 @@
       },
       "active-memory": {
         "enabled": true
+      }
+    }
+  },
+  "skills": {
+    "entries": {
+      "healthcheck": {
+        "enabled": false
       }
     }
   },
