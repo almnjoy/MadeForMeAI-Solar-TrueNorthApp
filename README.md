@@ -66,7 +66,7 @@ This repo contains the **React frontend** (`web2/`), **Kubernetes manifests** (`
 └─────────────────────────────┬───────────────────────────────┘
                               │ HTTPS
 ┌─────────────────────────────▼───────────────────────────────┐
-│                   K3s Cluster (178.104.234.55)                │
+│                   K3s Cluster (<CLUSTER_IP>)                │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────┐     │
 │  │  Traefik Ingress + Wildcard TLS                     │     │

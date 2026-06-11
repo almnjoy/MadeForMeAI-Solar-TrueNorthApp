@@ -1,6 +1,6 @@
 # TrueNorth Demo — Deployment Guide
 
-Cluster: K3s at `178.104.234.55`
+Cluster: K3s at `<CLUSTER_IP>`
 Namespace: `truenorth-demo`
 Registry: `ghcr.io/almnjoy/`
 
